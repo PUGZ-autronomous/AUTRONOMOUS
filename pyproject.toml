@@ -3,9 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ultron"
+name = "autronomous"
 version = "0.1.0"
-description = "Modular self-evolving harness ecology preserving hermes-agent core."
+description = "AUTRONOMOUS foundation, based on the Ultron harness ecology."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
@@ -20,6 +20,7 @@ dev = ["pytest", "fastapi", "uvicorn", "httpx", "jinja2", "pillow"]
 
 [project.scripts]
 ultron = "ultron.cli:main"
+autronomous = "ultron.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

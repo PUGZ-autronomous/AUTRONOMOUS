@@ -23,6 +23,7 @@ from ultron.ui.runtime import ActionCommand, ActionType, validate_action
 from ultron.hermes.adapter import LiveHermesUnavailable
 from ultron.ui.generator import LiveModelUnavailable
 from ultron.images import ImageRejected, MAX_BYTES, MAX_IMAGE_COUNT, validate_image
+from ultron.app.control import ControlStore, ControlWrite, WORKER_PLAN
 
 CSP = "default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
 STATIC_DIR = Path(__file__).with_name("static")
@@ -45,7 +46,9 @@ def create_app() -> FastAPI:
     engine.seed_baseline()
     csrf_tokens: dict[str, str] = {}
     session_store = SessionStore(secure_cookies=os.getenv("ULTRON_SECURE_COOKIES", "0") == "1")
-    app = FastAPI(title="Ultron Triage MVP")
+    control_store = ControlStore(initially_paused=engine.adapter.is_live)
+    app = FastAPI(title="AUTRONOMOUS Foundation")
+    app.state.control = control_store
     app.state.triage = engine
     app.state.session_store = session_store
     app.state.config = config_service
@@ -73,9 +76,9 @@ def create_app() -> FastAPI:
         response.set_cookie("ultron_csrf", csrf_token, httponly=False, samesite="strict", secure=session_store.secure_cookies)
         return """<!doctype html>
 <html lang=\"en\">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Ultron Chat</title><link rel="stylesheet" href="/static/chat.css"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>AUTRONOMOUS Command</title><link rel="stylesheet" href="/static/chat.css"></head>
 <body>
-  <main id=\"app\" data-csrf-cookie=\"ultron_csrf\">Loading Ultron chat...</main>
+  <main id=\"app\" data-csrf-cookie=\"ultron_csrf\">Loading AUTRONOMOUS...</main>
   <script src=\"/static/chat.js\"></script>
 </body>
 </html>"""
@@ -90,12 +93,48 @@ def create_app() -> FastAPI:
         response.set_cookie("ultron_csrf", csrf_token, httponly=False, samesite="strict", secure=session_store.secure_cookies)
         return """<!doctype html>
 <html lang=\"en\">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Ultron Dashboard</title><link rel="stylesheet" href="/static/dashboard.css"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>AUTRONOMOUS Control Room</title><link rel="stylesheet" href="/static/dashboard.css"></head>
 <body>
-  <main id=\"app\" data-csrf-cookie=\"ultron_csrf\">Loading Ultron dashboard...</main>
+  <main id=\"app\" data-csrf-cookie=\"ultron_csrf\">Loading AUTRONOMOUS control room...</main>
   <script src=\"/static/dashboard.js\"></script>
 </body>
 </html>"""
+
+    @app.get("/manual")
+    def manual() -> FileResponse:
+        return FileResponse(STATIC_DIR / "manual.html", media_type="text/html", headers={"Content-Security-Policy": CSP})
+
+    @app.get("/api/autronomous")
+    def foundation_status(response: Response) -> dict[str, Any]:
+        response.headers["Content-Security-Policy"] = CSP
+        return {
+            "product": "AUTRONOMOUS", "version": "0.1.0-foundation",
+            "execution_mode": "live_selected_unverified" if engine.adapter.is_live else "demo",
+            "provider": engine.adapter.provider_id,
+            "components": {"hermes": engine.adapter.is_live,
+                           "ui": engine.ui_generator.is_live,
+                           "module_synthesis": engine.module_synthesizer.is_live,
+                           "vision": engine.vlm_provider.is_live},
+            "control": control_store.snapshot(),
+            "workers": WORKER_PLAN,
+            "business": {"id": "001", "status": "planned", "mission": "Earn GBP 1 from a genuine external customer; reconcile settlement and all costs", "verified_revenue_gbp": None},
+            "capabilities": {"worker_runtime": False, "scheduling": False, "payments": False, "budget_enforcement": False, "web_engine_restart_persistence": False, "admission_pause_persistence": True},
+        }
+
+    @app.post("/api/autronomous/control")
+    def control(settings: ControlWrite, response: Response,
+                ultron_session: str | None = Cookie(default=None),
+                x_csrf_token: str | None = Header(default=None)) -> dict[str, Any]:
+        response.headers["Content-Security-Policy"] = CSP
+        principal = session_store.resolve(ultron_session, time.time())
+        if principal is None:
+            raise HTTPException(status_code=401, detail="control requires authenticated session")
+        if not principal.has_scope(Scope.MANAGE_SETTINGS):
+            raise HTTPException(status_code=403, detail="control requires manage settings scope")
+        expected = csrf_tokens.get(ultron_session or "")
+        if not expected or x_csrf_token != expected:
+            raise HTTPException(status_code=403, detail="control requires a valid CSRF token")
+        return control_store.set_paused(settings.paused, actor=principal.subject)
 
     @app.get("/api/uispec")
     def uispec(response: Response) -> dict[str, Any]:
@@ -187,6 +226,8 @@ def create_app() -> FastAPI:
             if not csrf_ok:
                 engine.telemetry.increment("auth_failures", event="invalid_request", subject=principal.subject)
                 raise HTTPException(status_code=403, detail="mutating action requires a valid CSRF token")
+        if cmd.type in {ActionType.SUBMIT_REQUEST, ActionType.RUN_BENCHMARK} and control_store.snapshot()["paused"]:
+            raise HTTPException(status_code=423, detail="New runs are paused. Resume from the control room; previously admitted work may still finish.")
         policy_ok = _policy_ok(engine, cmd)
         try:
             validate_action(

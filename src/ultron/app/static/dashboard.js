@@ -19,16 +19,18 @@ function createShell() {
   app.textContent = '';
   const header = el('header', 'topbar');
   const brand = el('div', 'brand');
-  brand.append(el('span', 'brand-mark', 'U'), el('div', 'brand-copy'));
-  brand.querySelector('.brand-copy').append(el('strong', null, 'Ultron Dashboard'), el('span', null, 'Operator ecology, evidence, safety, and metrics.'));
+  brand.append(el('span', 'brand-mark', 'A'), el('div', 'brand-copy'));
+  brand.querySelector('.brand-copy').append(el('strong', null, 'AUTRONOMOUS'), el('span', null, 'Control room · foundation build'));
   const nav = el('nav', 'nav-links');
   const chat = el('a', null, 'Chat');
   chat.href = '/';
-  nav.append(chat);
+  const manual = el('a', null, 'User manual');
+  manual.href = '/manual';
+  nav.append(chat, manual);
   header.append(brand, nav);
 
   const grid = el('main', 'dashboard-grid');
-  for (const [id, title] of [['ecology', 'Evolution ecology'], ['runs', 'Runs & evidence'], ['personalization', 'Personalization / Self-evolution'], ['safety', 'Safety / approvals'], ['settings', 'Model settings'], ['metrics', 'Metrics']]) {
+  for (const [id, title] of [['foundation', 'Core & mission'], ['workers', 'Worker plan'], ['ecology', 'Evolution ecology'], ['runs', 'Runs & evidence'], ['personalization', 'Personalization / Self-evolution'], ['safety', 'Safety / approvals'], ['settings', 'Model settings'], ['metrics', 'Metrics']]) {
     const section = el('section', 'panel');
     section.id = id;
     section.append(el('h2', null, title), el('div', 'panel-body', 'Loading…'));
@@ -45,13 +47,14 @@ async function getJson(url) {
 }
 
 async function refreshAll() {
-  const [ecology, runs, ledger, personalization, metrics, settings] = await Promise.all([
+  const [ecology, runs, ledger, personalization, metrics, settings, foundation] = await Promise.all([
     getJson('/api/ecology'),
     getJson('/api/runs'),
     getJson('/api/ledger'),
     getJson('/api/personalization'),
     getJson('/api/metrics'),
-    getJson('/api/settings/model')
+    getJson('/api/settings/model'),
+    getJson('/api/autronomous')
   ]);
   state.activePointerVersion = ecology.active_pointer_version;
   renderEcology(ecology);
@@ -60,6 +63,7 @@ async function refreshAll() {
   renderSafety(ledger.safety || {});
   renderSettings(settings);
   renderMetrics(metrics);
+  renderFoundation(foundation);
 }
 
 function body(id) {
@@ -281,3 +285,35 @@ refreshAll().catch((error) => {
   app.append(el('p', 'notice', String(error.message || error)));
 });
 window.setInterval(() => getJson('/api/metrics').then(renderMetrics).catch(() => {}), 5000);
+
+function renderFoundation(data) {
+  const parent = body('foundation');
+  parent.append(el('p', 'summary', data.execution_mode === 'demo' ? 'DEMO MODE · Hermes execution is deterministic' : 'LIVE ADAPTER SELECTED · connection has not been verified'));
+  for (const [name, live] of Object.entries(data.components || {})) parent.append(row([name.replaceAll('_', ' '), live ? 'live path selected · unverified, may incur costs' : 'demo path']));
+  parent.append(el('p', null, `New runs: ${data.control.paused ? 'PAUSED' : 'ENABLED'}`));
+  parent.append(el('p', null, 'Pause blocks newly admitted commands and benchmarks. Previously admitted work may finish. Pause state survives restart.'));
+  const toggle = el('button', 'send-button', data.control.paused ? 'Resume new runs' : 'Pause new runs');
+  toggle.type = 'button';
+  toggle.addEventListener('click', async () => {
+    toggle.disabled = true;
+    try {
+      const response = await fetch('/api/autronomous/control', {
+        method: 'POST', headers: {'Content-Type': 'application/json', 'X-CSRF-Token': cookieValue(state.csrfCookieName)},
+        body: JSON.stringify({paused: !data.control.paused})
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(typeof result.detail === 'string' ? result.detail : 'Control rejected');
+      renderFoundation(await getJson('/api/autronomous'));
+    } catch (error) { parent.append(el('p', 'notice', error.message)); toggle.disabled = false; }
+  });
+  parent.append(toggle);
+  const mission = el('section', 'subpanel');
+  mission.append(el('h3', null, 'Business 001 · planned'), el('p', null, data.business.mission));
+  mission.append(el('p', 'empty', 'Revenue: unconnected. No payment or accounting provider is configured.'));
+  parent.append(mission);
+  parent.append(el('p', 'notice', 'Web engine runs, modules and metrics currently reset on restart. Only model settings and the new-run pause persist.'));
+  const workers = body('workers');
+  workers.append(el('p', 'empty', 'These are role definitions. No worker computers or scheduled jobs are running.'));
+  for (const worker of data.workers) workers.append(row([worker.name, worker.purpose, worker.status]));
+}
+window.setInterval(() => getJson('/api/autronomous').then(renderFoundation).catch(() => {}), 5000);
