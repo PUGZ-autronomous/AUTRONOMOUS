@@ -16,14 +16,14 @@ if ! command -v "$PY" >/dev/null 2>&1; then
 fi
 
 if [ ! -d .venv ]; then
-  echo "[ultron] creating virtualenv (.venv) ..."
+  echo "[autronomous] creating virtualenv (.venv) ..."
   "$PY" -m venv .venv
 fi
 
-echo "[ultron] installing dependencies ..."
+echo "[autronomous] installing dependencies ..."
 ./.venv/bin/python -m pip install --quiet --upgrade pip
 ./.venv/bin/python -m pip install --quiet -e ".[dev]"
 
 PORT="${PORT:-8799}"
-echo "[ultron] starting server → http://localhost:${PORT}   (dashboard: http://localhost:${PORT}/dashboard)"
+echo "[autronomous] starting server → http://localhost:${PORT}   (dashboard: http://localhost:${PORT}/dashboard)"
 exec ./.venv/bin/python -m uvicorn ultron.app.server:create_app --factory --host 127.0.0.1 --port "${PORT}"

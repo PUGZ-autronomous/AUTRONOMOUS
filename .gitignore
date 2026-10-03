@@ -17,3 +17,4 @@ artifacts/server*.log
 # repo-local config dir if ULTRON_CONFIG_DIR is pointed inside the repo
 .config/ultron/
 secrets.json
+.autronomous_demo/

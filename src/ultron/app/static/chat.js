@@ -52,14 +52,16 @@ function createShell() {
   const orb = el('span', 'ultron-orb');
   orb.setAttribute('aria-hidden', 'true');
   const copy = el('div', 'brand-copy');
-  copy.append(el('strong', null, 'Ultron'), el('span', null, 'JARVIS HUD · generative command surface'));
+  copy.append(el('strong', null, 'AUTRONOMOUS'), el('span', null, 'Agent command surface · foundation'));
   brand.append(orb, copy);
   const presence = el('div', 'status-presence');
-  presence.append(el('span', 'status-dot'), el('span', null, 'Core stable'));
+  presence.append(el('span', 'status-dot'), el('span', null, 'Check mode in control room'));
   const nav = el('nav', 'nav-links');
-  const dashboard = el('a', null, 'Settings');
+  const dashboard = el('a', null, 'Control room');
   dashboard.href = '/dashboard';
-  nav.append(dashboard);
+  const manual = el('a', null, 'Manual');
+  manual.href = '/manual';
+  nav.append(dashboard, manual);
   header.append(brand, presence, nav);
 
   const main = el('main', 'hud-main');
@@ -84,7 +86,7 @@ function createShell() {
   const input = el('textarea', 'command-input');
   input.name = 'request_text';
   input.rows = 2;
-  input.placeholder = 'Command Ultron — build or tune a harness tool…';
+  input.placeholder = 'Command AUTRONOMOUS — build or tune a harness tool…';
   input.id = 'command-input';
 
   const controls = el('div', 'command-controls');
