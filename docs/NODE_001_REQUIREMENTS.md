@@ -41,3 +41,7 @@ GitHub stores code; it is not the runtime-state backup. Include the actual persi
 - Firmware support for restoring power after an outage.
 
 Select the operating system, drive layout and any purchases after checking these details. Before enabling a live worker, finish durable state, task admission/cancellation, bounded provider use, backups and remote access checks.
+
+## Candidate hardware supplied by the owner
+
+The proposed home unit is an ASUS M3402WFA. Its [official family specification](https://www.asus.com/displays-desktops/all-in-one-pcs/asus-aio/asus-m3402wfa/techspec/) lists Ryzen 5 7520U/Ryzen 3 7320U (four cores/eight threads), 8GB or 16GB on-board LPDDR5, and 256GB/512GB/1TB NVMe SSD options. The exact installed configuration has not been observed. Start sizing around one API-backed worker, then measure usage. Do not assume the RAM can be upgraded with conventional sticks.

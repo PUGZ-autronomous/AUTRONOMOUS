@@ -2,6 +2,16 @@
 
 Keiran Baker's customised foundation built on [NomaDamas/Ultron](https://github.com/NomaDamas/Ultron).
 
+## Try it before NODE-001 is installed
+
+[Open the browser demo setup](https://codespaces.new/PUGZ-autronomous/AUTRONOMOUS/tree/build/autronomous-foundation?quickstart=1) and follow the [short demo guide](docs/TRY_DEMO_NOW.md). Codespaces runs a temporary development computer; nothing is installed on your travel laptop. The demo launcher explicitly selects simulated providers and separate test state. This is not the permanent worker host.
+
+For a repeatable server/restart check in an installed development environment:
+
+```bash
+.venv/bin/python scripts/smoke_demo.py
+```
+
 ## Start here
 
 ```bash

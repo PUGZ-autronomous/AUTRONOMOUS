@@ -1,0 +1,18 @@
+{
+  "name": "AUTRONOMOUS demo bench",
+  "image": "mcr.microsoft.com/devcontainers/python:1-3.12-bookworm",
+  "forwardPorts": [8799],
+  "portsAttributes": {
+    "8799": {
+      "label": "AUTRONOMOUS demo",
+      "onAutoForward": "notify"
+    }
+  },
+  "containerEnv": {
+    "ULTRON_ADAPTER": "fake",
+    "ULTRON_UI_GENERATOR": "fake",
+    "ULTRON_MODULE_SYNTH": "fake",
+    "ULTRON_VLM": "fake"
+  },
+  "postCreateCommand": "bash scripts/setup_demo.sh"
+}
